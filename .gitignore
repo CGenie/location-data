@@ -9,3 +9,11 @@ cabal-dev
 .cabal-sandbox/
 cabal.sandbox.config
 cabal.config
+
+# JAVA
+*.class
+
+# Package Files #
+*.jar
+*.war
+*.ear
