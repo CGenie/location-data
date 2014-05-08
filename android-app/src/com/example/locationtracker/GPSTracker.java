@@ -4,6 +4,10 @@ package com.example.locationtracker;
  * Tracks GPS data and sends it to the CachedRequester.
  */
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import junit.framework.Assert;
 import android.app.Activity;
 import android.content.Context;
@@ -16,19 +20,34 @@ import android.os.Bundle;
 // telnet localhost 5554
 // geo fix <lat> <lng>
 
+class LocationPrintCallback implements ILocationCallback {
+	public void call(Location location) {
+		System.out.println(location.toString());
+	}
+}
+
 public class GPSTracker {
 
 	private Activity parentActivity;
 	private LocationManager locationManager;
 	private LocationListener locationListener;
+	private List<ILocationCallback> locationUpdateMethods;
+	
+	// debugging
+	private LocationPrintCallback locationPrintCallback;
 	
 	public GPSTracker(Activity parentActivity) {
+		this.locationUpdateMethods = new ArrayList<ILocationCallback>();
 		this.parentActivity = parentActivity;
 		Assert.assertNotNull("parentActivity cannot be null", parentActivity);
 		// Acquire a reference to the system Location Manager
 		this.locationManager = (LocationManager) this.parentActivity.getSystemService(Context.LOCATION_SERVICE);
 		
 		this.setupLocationListener();
+		
+		// debugging
+		this.locationPrintCallback = new LocationPrintCallback();
+		this.onLocationUpdate(this.locationPrintCallback);
 	}
 	
 	private void setupLocationListener() {
@@ -37,7 +56,8 @@ public class GPSTracker {
 			public void onLocationChanged(Location location) {
 				// Called when a new location is found by the network location provider.
 				//makeUseOfNewLocation(location);
-				System.out.println(location.toString());
+				
+				iterateLocationUpdateFunctions(location);
 			}
 
 			public void onStatusChanged(String provider, int status, Bundle extras) {}
@@ -51,4 +71,17 @@ public class GPSTracker {
 		// NOTE: listen only the GPS_PROVIDER, not the NETWORK_PROVIDER
 		this.locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this.locationListener);
 	};
+	
+	private void iterateLocationUpdateFunctions(Location location) {
+		for (Iterator<ILocationCallback> iter = this.locationUpdateMethods.iterator(); iter.hasNext(); ) {
+		    ILocationCallback callback = iter.next();
+		    
+		    callback.call(location);
+		}
+		
+	}
+	
+	public void onLocationUpdate(ILocationCallback callback) {
+		locationUpdateMethods.add(callback);
+	}
 }

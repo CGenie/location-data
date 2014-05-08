@@ -1,8 +1,8 @@
 package com.example.locationtracker;
 
-import android.content.Context;
+import android.app.Activity;
 import android.content.Intent;
-import android.location.LocationManager;
+import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.ActionBarActivity;
@@ -12,11 +12,29 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.TextView;
+
+class TextViewLocationUpdate implements ILocationCallback {
+	private Activity parentActivity;
+	
+	TextViewLocationUpdate(Activity parentActivity) {
+		this.parentActivity = parentActivity;
+	}
+	
+	public void call(Location location) {
+		TextView tvlat = (TextView) this.parentActivity.findViewById(R.id.text_latitude);
+		TextView tvlng = (TextView) this.parentActivity.findViewById(R.id.text_longitude);
+		
+		tvlat.setText(String.valueOf(location.getLatitude()));
+		tvlng.setText(String.valueOf(location.getLongitude()));
+	}
+}
 
 public class MainActivity extends ActionBarActivity {
 	public final static String EXTRA_MESSAGE = "com.example.locationtracker.MESSAGE";
 	
 	private GPSTracker gpsTracker;
+	private TextViewLocationUpdate locationUpdater;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -27,6 +45,11 @@ public class MainActivity extends ActionBarActivity {
 			getSupportFragmentManager().beginTransaction()
 					.add(R.id.container, new PlaceholderFragment()).commit();
 		}
+		
+		this.locationUpdater = new TextViewLocationUpdate(this);
+		
+		this.gpsTracker = new GPSTracker(this);
+		this.gpsTracker.onLocationUpdate(this.locationUpdater);
 	}
 
 	@Override
@@ -68,15 +91,10 @@ public class MainActivity extends ActionBarActivity {
 	
 	/** Called when the user clicks the Send button */
 	public void sendMessage(View view) {
-		if(this.gpsTracker == null) {
-			this.gpsTracker = new GPSTracker(this);
-		}
-		
 		Intent intent = new Intent(this, DisplayMessageActivity.class);
 		EditText editText = (EditText) findViewById(R.id.edit_message);
 		String message = editText.getText().toString();
 		intent.putExtra(EXTRA_MESSAGE, message);
 		startActivity(intent);
 	}
-
 }
