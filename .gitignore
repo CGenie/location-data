@@ -17,3 +17,4 @@ cabal.config
 *.jar
 *.war
 *.ear
+bin/*
