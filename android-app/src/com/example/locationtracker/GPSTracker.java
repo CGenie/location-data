@@ -26,12 +26,27 @@ class LocationPrintCallback implements ILocationCallback {
 	}
 }
 
+class LocationStoreCallback implements ILocationCallback {
+	private CachedRequester cachedRequester;
+
+	LocationStoreCallback(CachedRequester cachedRequester) {
+		this.cachedRequester = cachedRequester;
+	}
+	
+	public void call(Location location) {
+		this.cachedRequester.store(new GeoLocation(location.getLatitude(), location.getLongitude()));
+	}
+}
+
 public class GPSTracker {
 
 	private Activity parentActivity;
 	private LocationManager locationManager;
 	private LocationListener locationListener;
 	private List<ILocationCallback> locationUpdateMethods;
+	private CachedRequester cachedRequester;
+	
+	private LocationStoreCallback locationStoreCallback;
 	
 	// debugging
 	private LocationPrintCallback locationPrintCallback;
@@ -44,6 +59,10 @@ public class GPSTracker {
 		this.locationManager = (LocationManager) this.parentActivity.getSystemService(Context.LOCATION_SERVICE);
 		
 		this.setupLocationListener();
+		
+		this.cachedRequester = new CachedRequester(this.parentActivity);
+		this.locationStoreCallback = new LocationStoreCallback(this.cachedRequester);
+		this.onLocationUpdate(this.locationStoreCallback);
 		
 		// debugging
 		this.locationPrintCallback = new LocationPrintCallback();
