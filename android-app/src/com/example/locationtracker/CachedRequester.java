@@ -1,15 +1,10 @@
 package com.example.locationtracker;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 import android.app.Activity;
 import android.content.ContentValues;
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
@@ -46,14 +41,10 @@ class GeoLocationWithId extends GeoLocation {
 
 public class CachedRequester {
 	private Activity parentActivity;
-	private SharedPreferences sharedPref;
 	private CachedRequesterDbHelper dbHelper;
-	
-	public final String SHARED_PREFERENCES_KEY = "com.example.locationtracker.CachedRequester";
 	
 	public CachedRequester(Activity parentActivity) {
 		this.parentActivity = parentActivity;
-		this.sharedPref = parentActivity.getSharedPreferences(SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE);
 		this.dbHelper = new CachedRequesterDbHelper(parentActivity.getApplicationContext());
 		
 		System.out.println(this.dbRead().toString());
