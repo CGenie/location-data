@@ -1,3 +1,4 @@
+# Haskell
 dist
 cabal-dev
 *.o
@@ -18,3 +19,14 @@ cabal.config
 *.war
 *.ear
 bin/*
+
+
+# Clojure
+pom.xml
+*jar
+/lib/
+/classes/
+/targets/
+.lein-deps-sum
+\#*
+.\#*
