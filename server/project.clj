@@ -1,5 +1,4 @@
 
-
 (defproject server "0.1.0-SNAPSHOT"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
@@ -11,6 +10,7 @@
                  [korma "0.3.0-RC5"]  ; DB
                  [lobos "1.0.0-beta1"]  ; DB migrations
                  [org.xerial/sqlite-jdbc "3.7.2"]  ; DB
+                 [org.clojure/data.json "0.2.4"]  ; JSON
                  ]
   :main ^:skip-aot server.core
   :target-path "target/%s"

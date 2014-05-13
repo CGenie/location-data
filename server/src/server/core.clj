@@ -7,11 +7,11 @@
         (lobos core)
         [server.models])
   (:require [compojure.handler :as handler] ; form, query params decode; cookie; session, etc
-            [compojure.core :only [defroutes GET POST DELETE ANY context]]))
+            [compojure.core :only [defroutes GET POST DELETE ANY context]]
+            [clojure.data.json :as json]))
 
 (defn locations-read [req]
-  (println (select location-data
-                   )))
+  (json/write-str (select location-data)))
 
 (defn location-store [req]
   (let [timestamp (-> req :params :timestamp)
