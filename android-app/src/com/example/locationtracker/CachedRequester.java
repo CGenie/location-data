@@ -1,12 +1,29 @@
 package com.example.locationtracker;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
 
 import android.app.Activity;
 import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.AsyncTask;
+import android.provider.Settings.Secure;
 
 import com.example.locationtracker.CachedRequesterContract.CachedRequesterEntry;
 
@@ -39,19 +56,114 @@ class GeoLocationWithId extends GeoLocation {
 	}
 }
 
+
+// argument to RequestTask -- contains GeoLocation data with DB link
+// (DB link is necessary to remove POSTed stuff from the DB)
+class DBGeoLocation {
+	public GeoLocationWithId geoLocation;
+	public CachedRequesterDbHelper dbHelper;
+	public String androidId;
+
+	public DBGeoLocation(GeoLocationWithId geoLocation,
+			CachedRequesterDbHelper dbHelper,
+			String androidId) {
+		this.geoLocation = geoLocation;
+		this.dbHelper = dbHelper;
+		this.androidId = androidId;
+	}
+}
+
+
+class RequestTask extends AsyncTask<DBGeoLocation, String, List<DBGeoLocation>>{
+	
+    @Override
+    protected List<DBGeoLocation> doInBackground(DBGeoLocation... geoLocations) {
+    	List<DBGeoLocation> result = new ArrayList<DBGeoLocation>();
+    	int count = geoLocations.length;
+        HttpClient httpclient = new DefaultHttpClient();
+        HttpResponse response;
+        
+        //private String android_id = Secure.getString(getContext().getContentResolver(),
+        //        Secure.ANDROID_ID);
+        
+        for(int i = 0; i < count; i++) {
+        	DBGeoLocation geoLocation = geoLocations[i];
+	        HttpPost httppost = new HttpPost("http://10.0.2.2:8080/location/");
+	        
+	        try {
+	            List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(4);
+	            
+	            nameValuePairs.add(new BasicNameValuePair("device_id", geoLocation.androidId));
+	            nameValuePairs.add(new BasicNameValuePair("timestamp", geoLocation.geoLocation.timestamp));
+	            nameValuePairs.add(new BasicNameValuePair("latitude", String.valueOf(geoLocation.geoLocation.latitude)));
+	            nameValuePairs.add(new BasicNameValuePair("longitude", String.valueOf(geoLocation.geoLocation.longitude)));
+	            httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+	            
+	            response = httpclient.execute(httppost);
+	            
+	            if((response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) && (
+	            		geoLocation.geoLocation.id != null)) {
+	            	result.add(geoLocation);
+	            }
+	            
+	            response.getEntity().consumeContent();
+	        } catch (ClientProtocolException e) {
+	            //TODO Handle problems..
+	        } catch (IOException e) {
+	            //TODO Handle problems..
+			}
+        }
+        return result;
+    }
+
+
+    @Override
+    protected void onPostExecute(List<DBGeoLocation> result) {
+        super.onPostExecute(result);
+        
+        Iterator<DBGeoLocation> it = result.iterator();
+        DBGeoLocation iid;
+        SQLiteDatabase db = null;
+        
+        while(it.hasNext()) {
+        	iid = it.next();
+        	if(db == null) {
+        		db = iid.dbHelper.getWritableDatabase();
+        	}
+        	db.delete(CachedRequesterEntry.TABLE_NAME,
+        			  CachedRequesterEntry._ID + "=?",
+        			  new String[] {String.valueOf(iid.geoLocation.id)});
+        }
+    }
+}
+
+
 public class CachedRequester {
-	private Activity parentActivity;
 	private CachedRequesterDbHelper dbHelper;
+	private String androidId;
+	private Activity parentActivity;
 	
 	public CachedRequester(Activity parentActivity) {
+		Context ctx = parentActivity.getApplicationContext();
 		this.parentActivity = parentActivity;
-		this.dbHelper = new CachedRequesterDbHelper(parentActivity.getApplicationContext());
+		this.androidId = Secure.getString(ctx.getContentResolver(),
+                						   Secure.ANDROID_ID); 
+		
+		this.dbHelper = new CachedRequesterDbHelper(ctx);
 		
 		System.out.println(this.dbRead().toString());
 	}
 	
 	public void store(GeoLocation location) {
 		this.dbInsert(location);
+		
+		ConnectivityManager connectivityManager 
+            = (ConnectivityManager) this.parentActivity.getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+		
+		if(activeNetworkInfo != null && activeNetworkInfo.isConnected()) {
+			this.connected();
+		};
 	}
 	
 	private void dbInsert(GeoLocation location) {
@@ -109,6 +221,18 @@ public class CachedRequester {
 		}
 		
 		return ret;
+	}
+
+	public void connected() {
+		List<GeoLocationWithId> list = this.dbRead();
+		GeoLocationWithId[] geoLocations = list.toArray(new GeoLocationWithId[list.size()]);
+		DBGeoLocation[] dbGeoLocations = new DBGeoLocation[list.size()];
+		
+		for(int i = 0; i < list.size(); i++) {
+			dbGeoLocations[i] = new DBGeoLocation(geoLocations[i], this.dbHelper, this.androidId);
+		}
+		
+        new RequestTask().execute(dbGeoLocations);
 	}
 	
 

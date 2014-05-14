@@ -1,8 +1,13 @@
 package com.example.locationtracker;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.location.Location;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.ActionBarActivity;
@@ -30,6 +35,29 @@ class TextViewLocationUpdate implements ILocationCallback {
 	}
 }
 
+
+class UpdateReceiver extends BroadcastReceiver {
+	private GPSTracker gpsTracker;
+	
+	UpdateReceiver(GPSTracker gpsTracker) {
+		this.gpsTracker = gpsTracker;
+	}
+	
+@Override
+public void onReceive(Context context, Intent intent) {
+
+
+     ConnectivityManager connectivityManager = (ConnectivityManager) 
+                                  context.getSystemService(Context.CONNECTIVITY_SERVICE );
+     NetworkInfo activeNetInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+     boolean isConnected = activeNetInfo != null && activeNetInfo.isConnectedOrConnecting();   
+     if (isConnected) {
+         this.gpsTracker.connected();
+     };
+   }
+}
+
+
 public class MainActivity extends ActionBarActivity {
 	public final static String EXTRA_MESSAGE = "com.example.locationtracker.MESSAGE";
 	
@@ -50,6 +78,10 @@ public class MainActivity extends ActionBarActivity {
 		
 		this.gpsTracker = new GPSTracker(this);
 		this.gpsTracker.onLocationUpdate(this.locationUpdater);
+		
+		Context ctx = this.getApplicationContext();
+		ctx.registerReceiver(new UpdateReceiver(this.gpsTracker),
+					         new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
 	}
 
 	@Override
@@ -97,5 +129,6 @@ public class MainActivity extends ActionBarActivity {
 		
 		intent.putExtra(EXTRA_MESSAGE, message);
 		startActivity(intent);
+
 	}
 }

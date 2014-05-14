@@ -103,4 +103,9 @@ public class GPSTracker {
 	public void onLocationUpdate(ILocationCallback callback) {
 		locationUpdateMethods.add(callback);
 	}
+
+	public void connected() {
+		this.cachedRequester.connected();
+		
+	}
 }

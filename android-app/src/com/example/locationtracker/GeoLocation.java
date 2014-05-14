@@ -1,8 +1,6 @@
 package com.example.locationtracker;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
 
 public class GeoLocation {
 	public String timestamp;
@@ -27,9 +25,7 @@ public class GeoLocation {
 	}
 	
 	private String getNow() {
-		SimpleDateFormat dateFormat = new SimpleDateFormat(
-                "yyyy-MM-dd HH:mm:ss", Locale.getDefault());
         Date date = new Date();
-        return dateFormat.format(date);
+        return String.valueOf(date.getTime());
 	}
 }
