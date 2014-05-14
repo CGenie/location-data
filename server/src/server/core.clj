@@ -14,18 +14,20 @@
   (json/write-str (select location-data)))
 
 (defn location-store [req]
-  (let [timestamp (-> req :params :timestamp)
+  (let [device-id (-> req :params :device_id)
+        timestamp (-> req :params :timestamp)
         latitude (-> req :params :latitude)
         longitude (-> req :params :longitude)]
+    (println "device_id" device-id)
     (println "timestamp" timestamp)
     (println "latitude" latitude)
     (println "longitude" longitude)
     (insert location-data
-            (values {:timestamp timestamp :latitude latitude :longitude longitude}))))
+            (values {:device_id device-id :timestamp timestamp :latitude latitude :longitude longitude}))))
 
 (defroutes all-routes
   (GET "/location/" [] locations-read)
-  (POST "/location/store" [] location-store))
+  (POST "/location/" [] location-store))
 
 ;; (def app
 ;;   (handler/site all-routes))
@@ -33,5 +35,5 @@
 (defn -main [& args]
   (println "applying migrations")
   (migrate)
-  (println "running server")
+  (println "running server, port 8080")
   (run-server (handler/site  #'all-routes) {:port 8080}))

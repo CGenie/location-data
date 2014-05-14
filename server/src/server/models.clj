@@ -6,5 +6,5 @@
   (pk :id)
   (table :location_data)
   (database db)
-  (entity-fields :timestamp :latitude :longitude))
+  (entity-fields :device_id :timestamp :latitude :longitude))
 
