@@ -16,7 +16,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
+//import android.widget.EditText;
 import android.widget.TextView;
 
 class TextViewLocationUpdate implements ILocationCallback {
@@ -119,16 +119,5 @@ public class MainActivity extends ActionBarActivity {
 					false);
 			return rootView;
 		}
-	}
-	
-	/** Called when the user clicks the Send button */
-	public void sendMessage(View view) {
-		Intent intent = new Intent(this, DisplayMessageActivity.class);
-		EditText editText = (EditText) findViewById(R.id.edit_message);
-		String message = editText.getText().toString();
-		
-		intent.putExtra(EXTRA_MESSAGE, message);
-		startActivity(intent);
-
 	}
 }
